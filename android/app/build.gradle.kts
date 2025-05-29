@@ -1,3 +1,10 @@
+buildscript {
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.21")
+    }
+}
+
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -8,7 +15,7 @@ plugins {
 android {
     namespace = "com.example.call_20250331"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -24,7 +31,7 @@ android {
         applicationId = "com.example.call_20250331"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
