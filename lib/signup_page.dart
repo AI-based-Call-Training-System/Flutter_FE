@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'login_page.dart';
-import 'main.dart'; // 로그인 페이지를 연결하기 위해 import
+import '../services/restapi_service.dart'; // API 연동
+import '../services/config.dart'; // BASE_URL 정의
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -12,64 +13,65 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  Future<void> signUp(String name, String email, String password) async {
-    final url = Uri.parse('https://your-api-url.com/signup'); // 회원가입 API 엔드포인트
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'name': name,
-        'email': email,
-        'password': password,
-      }),
-    );
+  bool _isLoading = false;
 
-    if (response.statusCode == 201) {
-      // 회원가입 성공 -> 로그인 페이지로 이동
+  void _signup() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    setState(() => _isLoading = true);
+
+    final success = await ApiService().signup(phone, password, name);
+
+    setState(() => _isLoading = false);
+
+    if (success) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
       );
     } else {
-      // 회원가입 실패 -> 에러 메시지 표시
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("회원가입 실패"),
-          content: Text("회원가입 정보를 확인해주세요."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("확인"),
-            ),
-          ],
-        ),
-      );
+      _showErrorDialog("회원가입 실패", "전화번호 또는 비밀번호를 다시 확인해주세요.");
     }
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text("확인"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // 👈 배경 흰색
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('회원가입'),
-        backgroundColor: Colors.white, // 👈 앱바 흰색
-        elevation: 0, // 👈 그림자 제거
-        iconTheme: IconThemeData(color: Colors.black), // 👈 아이콘 색 변경
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.black),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: ListView(
             children: [
               Text(
                 '회원가입을 해주세요!',
@@ -86,14 +88,15 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
               ),
               SizedBox(height: 20),
-              Text("이메일"),
+              Text("전화번호"),
               SizedBox(height: 5),
               TextFormField(
-                controller: _emailController,
+                controller: _phoneController,
                 decoration: InputDecoration(
-                  hintText: '이메일을 입력해주세요',
+                  hintText: '전화번호를 입력해주세요',
                   border: OutlineInputBorder(),
                 ),
+                keyboardType: TextInputType.phone,
               ),
               SizedBox(height: 20),
               Text("비밀번호"),
@@ -131,31 +134,15 @@ class _SignUpPageState extends State<SignUpPage> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       if (_passwordController.text != _confirmPasswordController.text) {
-                        // 비밀번호 확인이 일치하지 않으면 경고 메시지 표시
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text("오류"),
-                            content: Text("비밀번호가 일치하지 않습니다."),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: Text("확인"),
-                              ),
-                            ],
-                          ),
-                        );
+                        _showErrorDialog("오류", "비밀번호가 일치하지 않습니다.");
                       } else {
-                        // 회원가입 요청
-                        signUp(
-                          _nameController.text,
-                          _emailController.text,
-                          _passwordController.text,
-                        );
+                        _signup();
                       }
                     }
                   },
-                  child: Text(
+                  child: _isLoading
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text(
                     '회원가입 하기',
                     style: TextStyle(color: Colors.white, fontSize: 16),
                   ),

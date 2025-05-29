@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'signup_page.dart';
 import 'home_page.dart';
+import '../services/restapi_service.dart'; // API 클래스 호출용
 
 class LoginPage extends StatefulWidget {
   @override
@@ -11,62 +12,47 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  Future<void> login(String email, String password) async {
-    // 임시 로그인 조건: 이메일 아무거나 + 비밀번호는 '1234'일 때 성공
-    if (email.isNotEmpty && password == '1234') {
+  bool _isLoading = false;
+
+  void _login() async {
+    final id = _idController.text.trim();
+    final password = _passwordController.text.trim();
+
+    setState(() => _isLoading = true);
+
+    final success = await ApiService().login(id, password);
+
+    setState(() => _isLoading = false);
+
+    if (success) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomePage()),
       );
     } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("로그인 실패"),
-          content: Text("비밀번호는 '1234'로 입력해보세요."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("확인"),
-            ),
-          ],
-        ),
-      );
+      _showErrorDialog("로그인 실패", "아이디 또는 비밀번호가 올바르지 않습니다.");
     }
   }
 
-  // Future<void> login(String email, String password) async {
-  //   final url = Uri.parse('https://your-api-url.com/login');
-  //   final response = await http.post(
-  //     url,
-  //     headers: {'Content-Type': 'application/json'},
-  //     body: json.encode({'email': email, 'password': password}),
-  //   );
-  //   if (response.statusCode == 200) {
-  //     Navigator.pushReplacement(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => HomePage()),
-  //     );
-  //   } else {
-  //     showDialog(
-  //       context: context,
-  //       builder: (context) => AlertDialog(
-  //         title: Text("로그인 실패"),
-  //         content: Text("이메일 또는 비밀번호를 확인해주세요."),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.of(context).pop(),
-  //             child: Text("확인"),
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   }
-  // }
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text("확인"),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Form( // ✅ Form 추가
+        child: Form(
           key: _formKey,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -89,18 +75,18 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 30),
-              Text("ID"),
+              Text("아이디"),
               SizedBox(height: 5),
               TextFormField(
-                controller: _emailController,
+                controller: _idController,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '이메일을 입력해주세요';
+                    return '아이디를 입력해주세요';
                   }
                   return null;
                 },
                 decoration: InputDecoration(
-                  hintText: '아이디(이메일)을 입력해주세요',
+                  hintText: '아이디를 입력해주세요',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -134,10 +120,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      login(_emailController.text, _passwordController.text);
+                      _login();
                     }
                   },
-                  child: Text(
+                  child: _isLoading
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text(
                     '로그인 하기',
                     style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
