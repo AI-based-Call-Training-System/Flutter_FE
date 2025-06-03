@@ -51,7 +51,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isUser ? Colors.blue[200] : Colors.grey[300],
+              color: isUser ? Colors.green.shade100 : Colors.white,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -72,8 +72,12 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Feedback Detail'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

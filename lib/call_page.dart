@@ -173,6 +173,7 @@ class _CallPageState extends State<CallPage> {
               label: Text("녹음 재생"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
             ),
