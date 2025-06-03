@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_sound/flutter_sound.dart'; // Codec 포함된 패키지
@@ -9,6 +10,20 @@ import 'feedback_loading_page.dart';
 import 'feedback_detail_page.dart';
 import 'feedback_result_page.dart';
 // import 'package:flutter_sound/flutter_sound.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+
+// 함수 정의
+Future<void> getCacheFileSize(String filePath) async {
+  final file = File(filePath);
+
+  if (await file.exists()) {
+    final length = await file.length();
+    print('파일 크기: $length bytes');
+  } else {
+    print('파일이 존재하지 않습니다.');
+  }
+}
 
 
 class CallPage extends StatefulWidget {
@@ -186,8 +201,11 @@ class _CallPageState extends State<CallPage> {
                         await recorder.stopRecorder();
                         print("🛑 녹음 종료됨");
                         print("📁 파일 경로: $audioPath");
+                        getCacheFileSize(audioPath);
 
                         await sendToServer(File(audioPath));
+                        await evalAudio("tester1");
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const FeedbackResultPage()),
@@ -231,5 +249,24 @@ class _CallPageState extends State<CallPage> {
     }
   }
 
+  Future<void> evalAudio(String userId) async {
+    var uri = Uri.parse("http://10.0.2.2:8000/evaluate-audio/?userId=$userId");
 
+    try {
+      var response = await http.get(uri); // 파일 없음 → GET 요청 가능
+
+      if (response.statusCode == 200) {
+        var result = jsonDecode(response.body);
+        print("✅ 평가 결과: $result");
+
+        // 결과 전달 or 화면 이동
+      } else {
+        print("❌ 서버 오류: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("❌ 요청 실패: $e");
+    }
+  }
 }
+
+
