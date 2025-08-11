@@ -22,6 +22,11 @@ class _LoginPageState extends State<LoginPage> {
     final id = _idController.text.trim();
     final password = _passwordController.text.trim();
 
+    if (id.isEmpty || password.isEmpty) {
+      _showErrorDialog("입력 오류", "아이디와 비밀번호를 모두 입력해주세요.");
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final success = await ApiService().login(id, password);

@@ -1,10 +1,19 @@
-// REST API 서버 URL
-// android 에뮬레이터: 10.0.2.2
-// iOS 에뮬레이터: localhost
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
-const String BASE_URL_WEB = 'http://localhost:3000';
-const String BASE_URL_ANDROID = 'http://10.0.2.2:3000';
-const String BASE_URL_IOS = 'http://localhost:3000';
-// const String BASE_URL_DEVICE = 'http://192.168.56.101:3000';
+// 서버 주소 설정
+const String _BASE_URL_WEB = 'http://172.30.64.24:3000'; // ← 여기 LAN IP로 변경
+const String _BASE_URL_ANDROID = 'http://10.0.2.2:3000';
+const String _BASE_URL_IOS = 'http://localhost:3000';
 
-const String BASE_URL = BASE_URL_WEB;
+String get BASE_URL {
+  if (kIsWeb) {
+    return _BASE_URL_WEB;
+  } else if (Platform.isAndroid) {
+    return _BASE_URL_ANDROID;
+  } else if (Platform.isIOS) {
+    return _BASE_URL_IOS;
+  } else {
+    return _BASE_URL_WEB;
+  }
+}
