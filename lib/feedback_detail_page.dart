@@ -1,105 +1,113 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class FeedbackDetailPage extends StatefulWidget {
-  const FeedbackDetailPage({super.key});
+  const FeedbackDetailPage({Key? key}) : super(key: key);
 
   @override
-  State<FeedbackDetailPage> createState() => _FeedbackDetailPageState();
+  _FeedbackDetailPageState createState() => _FeedbackDetailPageState();
 }
 
 class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
-  List<Map<String, dynamic>> messages = [];
+  List<FeedbackHistory> historyList = [];
+  bool isLoading = true;
+
+  final String userId = "tester1"; // 🔒 userId 고정
 
   @override
   void initState() {
     super.initState();
-    fetchHistory();
+    fetchHistory(userId);
   }
 
-  Future<void> fetchHistory() async {
+  Future<void> fetchHistory(String userId) async {
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:8000/session/history?user_id=tester1'), // user_id 변경 가능
+      Uri.parse('http://10.0.2.2:8000/session/history?user_id=tester1'), // ← 서버 주소 수정 필요
     );
 
     if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
+      final data = json.decode(response.body);
+      final List<dynamic> history = data['history'];
+
       setState(() {
-        messages = List<Map<String, dynamic>>.from(jsonData['history']);
+        historyList = history.map((item) => FeedbackHistory.fromJson(item)).toList();
+        isLoading = false;
       });
     } else {
-      print("❌ 히스토리 불러오기 실패: ${response.statusCode}");
+      throw Exception('Failed to load history');
     }
   }
 
-  Widget _buildMessageBubble(String sender, String message, {bool isUser = false}) {
-    return Row(
-      mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(12),
-          constraints: const BoxConstraints(maxWidth: 280),
-          decoration: BoxDecoration(
-            color: isUser ? Colors.green.shade100 : Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(12),
-              topRight: const Radius.circular(12),
-              bottomLeft: Radius.circular(isUser ? 12 : 0),
-              bottomRight: Radius.circular(isUser ? 0 : 12),
+  Widget _buildMessageItem(FeedbackHistory history) {
+    bool isUser = history.role == "user";
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isUser ? Colors.blue[200] : Colors.grey[300],
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              history.content,
+              style: const TextStyle(fontSize: 16),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                sender,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              ),
-              const SizedBox(height: 4),
-              Text(message),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            history.timestamp,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // 피드백 결과 페이지와 동일한 배경
       appBar: AppBar(
-        title: const Text("학과 사무실에 장학금 문의"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+        title: const Text('Feedback Detail'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("해당 통화에 대한 기록", style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final msg = messages[index];
-                  final isUser = msg['role'] == 'user';
-                  return _buildMessageBubble(
-                    isUser ? "사용자" : "AI",
-                    msg['content'] ?? '',
-                    isUser: isUser,
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : historyList.isEmpty
+          ? const Center(child: Text('히스토리가 없습니다.'))
+          : ListView.builder(
+        itemCount: historyList.length,
+        itemBuilder: (context, index) {
+          return _buildMessageItem(historyList[index]);
+        },
       ),
+    );
+  }
+}
+
+class FeedbackHistory {
+  final String role;
+  final String content;
+  final String timestamp;
+  final String audioPath;
+
+  FeedbackHistory({
+    required this.role,
+    required this.content,
+    required this.timestamp,
+    required this.audioPath,
+  });
+
+  factory FeedbackHistory.fromJson(Map<String, dynamic> json) {
+    return FeedbackHistory(
+      role: json['role'] ?? '',
+      content: json['content'] ?? '',
+      timestamp: json['timestamp'] ?? '',
+      audioPath: json['audio_path'] ?? '',
     );
   }
 }

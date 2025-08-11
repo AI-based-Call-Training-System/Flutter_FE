@@ -11,10 +11,12 @@ class ApiService {
       Uri.parse('$baseUrl/signup'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'phone': phone,
+        'phoneNumber': phone,
         'password': password,
+
         'name': name,
         'userId': userId,
+
       }),
     );
 
