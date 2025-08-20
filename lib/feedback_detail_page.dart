@@ -73,6 +73,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
             decoration: BoxDecoration(
               // ✨ 변경된 부분: 말풍선 색상 및 그림자 효과
               color: isUser ? Colors.green[200] : Colors.white,
+
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(

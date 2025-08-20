@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'dart:io' as io;
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -19,6 +20,7 @@ import 'package:http/http.dart' as http;
 
 
 import 'feedback_result_page.dart';
+
 
 class CallPage extends StatefulWidget {
   final String scenario;
@@ -58,10 +60,10 @@ class _CallPageState extends State<CallPage> {
       requestMicrophonePermission();
       player!.openPlayer();
     }
-  }
 
   @override
   void dispose() {
+
     if (kIsWeb) {
       _mediaRecorder?.stop();
     } else {
@@ -222,6 +224,7 @@ class _CallPageState extends State<CallPage> {
     } else {
       await playMobileRecording();
     }
+
   }
 
   @override
@@ -239,7 +242,6 @@ class _CallPageState extends State<CallPage> {
             ),
             SizedBox(height: 30),
 
-            // 첫 말풍선
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -271,7 +273,6 @@ class _CallPageState extends State<CallPage> {
 
             SizedBox(height: 20),
 
-            // 두 번째 말풍선
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -310,6 +311,7 @@ class _CallPageState extends State<CallPage> {
               label: Text("녹음 재생"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
             ),
@@ -336,6 +338,7 @@ class _CallPageState extends State<CallPage> {
                 ),
               ),
 
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24),
               child: Row(
@@ -347,6 +350,7 @@ class _CallPageState extends State<CallPage> {
                     onPressed: () async {
 
                       await toggleRecording();
+
 
                     },
                     style: ElevatedButton.styleFrom(
@@ -367,3 +371,4 @@ class _CallPageState extends State<CallPage> {
     );
   }
 }
+
