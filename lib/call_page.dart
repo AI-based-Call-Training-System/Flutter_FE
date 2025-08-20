@@ -1,25 +1,26 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_sound/flutter_sound.dart';
+
+import 'dart:io' as io;
+import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:flutter/material.dart';
-import 'package:flutter_sound/public/flutter_sound_recorder.dart';
-import 'package:http/http.dart' as http;
+
+import 'dart:async';
+
+
+// 웹 전용
+import 'dart:html' as html;
+
+// 모바일 전용
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
-import 'feedback_loading_page.dart';
-import 'feedback_detail_page.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
+
+
 import 'feedback_result_page.dart';
 
-Future<void> getCacheFileSize(String filePath) async {
-  final file = File(filePath);
-
-  if (await file.exists()) {
-    final length = await file.length();
-    print('파일 크기: $length bytes');
-  } else {
-    print('파일이 존재하지 않습니다.');
-  }
-}
 
 class CallPage extends StatefulWidget {
   final String scenario;
@@ -30,82 +31,200 @@ class CallPage extends StatefulWidget {
 }
 
 class _CallPageState extends State<CallPage> {
-  FlutterSoundPlayer player = FlutterSoundPlayer();
-  FlutterSoundRecorder recorder = FlutterSoundRecorder();
-
+  // --- 모바일용 녹음 플레이어 & 레코더 ---
+  FlutterSoundPlayer? player;
+  FlutterSoundRecorder? recorder;
+  String? audioPath;
   bool isRecording = false;
-  late String audioPath;
+
+  // --- 웹용 녹음 변수 ---
+  html.MediaRecorder? _mediaRecorder;
+  List<html.Blob> _audioChunks = [];
+  html.Blob? _audioBlob;
+  bool _isWebRecording = false;
+
+  // 녹음 완료 여부 플래그
+  bool isRecorded = false;
+
+  String _statusText = "녹음 준비 완료";
 
   @override
   void initState() {
     super.initState();
-    initRecorder();
-    requestMicrophonePermission();
-    player.openPlayer();
-  }
+    if (kIsWeb) {
+      // 웹 초기화 없음
+    } else {
+      player = FlutterSoundPlayer();
+      recorder = FlutterSoundRecorder();
+      initRecorder();
+      requestMicrophonePermission();
+      player!.openPlayer();
+    }
 
   @override
   void dispose() {
-    recorder.closeRecorder();
-    player.closePlayer();
+
+    if (kIsWeb) {
+      _mediaRecorder?.stop();
+    } else {
+      recorder?.closeRecorder();
+      player?.closePlayer();
+    }
     super.dispose();
   }
 
+  // 모바일 권한 요청
   Future<void> requestMicrophonePermission() async {
-    var status = await Permission.microphone.status;
-    print("[Permission] 현재 마이크 권한 상태: $status");
-    if (!status.isGranted) {
-      var result = await Permission.microphone.request();
-      print("[Permission] 마이크 권한 요청 결과: $result");
+    if (!kIsWeb) {
+      var status = await Permission.microphone.status;
+      if (!status.isGranted) {
+        await Permission.microphone.request();
+      }
     }
   }
 
+  // 모바일 녹음 초기화
   Future<void> initRecorder() async {
-    await recorder.openRecorder();
-    print("[Recorder] Recorder 열림");
-    await recorder.setSubscriptionDuration(const Duration(milliseconds: 500));
-  }
-
-  Future<void> playRecording() async {
-    if (audioPath.isNotEmpty) {
-      final file = File(audioPath);
-      if (await file.exists()) {
-        await player.startPlayer(fromURI: audioPath);
-        print("▶ 재생 시작: $audioPath");
-      } else {
-        print("⚠ 녹음된 파일이 존재하지 않습니다.");
+    if (!kIsWeb && recorder != null) {
+      await recorder!.openRecorder();
+      await recorder!.setSubscriptionDuration(const Duration(milliseconds: 500));
+      final status = await recorder!.isEncoderSupported(Codec.aacADTS);
+      if (!status) {
+        print('AAC 인코딩 미지원');
       }
-    } else {
-      print("⚠ 녹음된 파일 경로가 없습니다.");
     }
   }
 
-  Future<void> startRecording() async {
-    var micStatus = await Permission.microphone.status;
-    if (!micStatus.isGranted) {
-      print("❗ 마이크 권한이 없습니다.");
-      var req = await Permission.microphone.request();
-      if (!req.isGranted) {
-        print("❌ 마이크 권한 거부됨");
-        return;
-      }
-    }
-
-    Directory tempDir = await getTemporaryDirectory();
-    audioPath = '${tempDir.path}/recorded_audio.aac';  // AAC 확장자 권장
-    print("[녹음] 저장 경로: $audioPath");
-
-    await recorder.startRecorder(
+  // 모바일 녹음 시작
+  Future<void> startMobileRecording() async {
+    final tempDir = await getTemporaryDirectory();
+    audioPath = '${tempDir.path}/recorded_audio.aac'; // 모바일은 aac 사용
+    await recorder!.startRecorder(
       toFile: audioPath,
       codec: Codec.aacADTS,
     );
-    print("[녹음] 녹음 시작됨");
+    setState(() {
+      _statusText = "녹음 중...";
+      isRecording = true;
+      isRecorded = false; // 녹음 다시 시작하면 false로
+    });
   }
 
-  Future<void> stopRecording() async {
-    await recorder.stopRecorder();
-    print("[녹음] 녹음 종료됨");
-    await getCacheFileSize(audioPath);
+  // 모바일 녹음 중지
+  Future<void> stopMobileRecording() async {
+    await recorder!.stopRecorder();
+    setState(() {
+      _statusText = "녹음 완료! 재생 가능";
+      isRecording = false;
+      isRecorded = true; // 녹음 완료 표시
+    });
+  }
+
+  // 모바일 녹음 재생
+  Future<void> playMobileRecording() async {
+    if (audioPath == null) {
+      setState(() {
+        _statusText = "녹음된 파일이 없습니다.";
+      });
+      return;
+    }
+    await player!.startPlayer(fromURI: audioPath);
+    setState(() {
+      _statusText = "재생 중...";
+    });
+  }
+
+  // --- 웹용 녹음 시작 ---
+  Future<void> startWebRecording() async {
+    try {
+      final stream = await html.window.navigator.mediaDevices!.getUserMedia({'audio': true});
+      _audioChunks.clear();
+      _mediaRecorder = html.MediaRecorder(stream);
+
+      _mediaRecorder!.addEventListener('dataavailable', (event) {
+        final blobEvent = event as html.BlobEvent;
+        if (blobEvent.data != null) {
+          _audioChunks.add(blobEvent.data!);
+        }
+      });
+
+      _mediaRecorder!.addEventListener('stop', (event) {
+        _audioBlob = html.Blob(_audioChunks, 'audio/webm');
+        setState(() {
+          _statusText = "녹음 완료! 재생 가능";
+          _isWebRecording = false;
+          isRecorded = true; // 녹음 완료 표시
+        });
+      });
+
+      _mediaRecorder!.start();
+      setState(() {
+        _statusText = "녹음 중...";
+        _isWebRecording = true;
+        isRecorded = false; // 녹음 다시 시작하면 false로
+      });
+    } catch (e) {
+      setState(() {
+        _statusText = "녹음 시작 실패: $e";
+      });
+    }
+  }
+
+  // --- 웹용 녹음 중지 ---
+  Future<void> stopWebRecording() async {
+    _mediaRecorder?.stop();
+  }
+
+  // --- 웹용 녹음 재생 ---
+  Future<void> playWebRecording() async {
+    if (_audioBlob == null) {
+      setState(() {
+        _statusText = "녹음된 음성이 없습니다.";
+      });
+      return;
+    }
+    final url = html.Url.createObjectUrlFromBlob(_audioBlob!);
+    final audio = html.AudioElement()
+      ..src = url
+      ..controls = true
+      ..autoplay = true;
+    html.document.body!.append(audio);
+
+    Timer(Duration(minutes: 1), () {
+      audio.remove();
+      html.Url.revokeObjectUrl(url);
+    });
+
+    setState(() {
+      _statusText = "재생 중...";
+    });
+  }
+
+  // 녹음 시작/종료 토글 함수
+  Future<void> toggleRecording() async {
+    if (kIsWeb) {
+      if (_isWebRecording) {
+        await stopWebRecording();
+      } else {
+        await startWebRecording();
+      }
+    } else {
+      if (isRecording) {
+        await stopMobileRecording();
+      } else {
+        await startMobileRecording();
+      }
+    }
+  }
+
+  // 녹음 재생 함수
+  Future<void> playRecording() async {
+    if (kIsWeb) {
+      await playWebRecording();
+    } else {
+      await playMobileRecording();
+    }
+
   }
 
   @override
@@ -187,9 +306,7 @@ class _CallPageState extends State<CallPage> {
             Spacer(),
 
             ElevatedButton.icon(
-              onPressed: () async {
-                await playRecording();
-              },
+              onPressed: playRecording,
               icon: Icon(Icons.play_arrow),
               label: Text("녹음 재생"),
               style: ElevatedButton.styleFrom(
@@ -199,38 +316,51 @@ class _CallPageState extends State<CallPage> {
               ),
             ),
 
+            SizedBox(height: 16),
+
+            // 녹음 완료시만 보이는 피드백 확인 버튼
+            if (isRecorded)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const FeedbackResultPage()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    minimumSize: Size(double.infinity, 50),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  child: Text("피드백 확인"),
+                ),
+              ),
+
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Icon(Icons.dialpad, size: 32, color: Colors.grey.shade600),
+
                   ElevatedButton(
                     onPressed: () async {
-                      if (!isRecording) {
-                        print("🔴 녹음 시작 버튼 클릭");
-                        await startRecording();
-                      } else {
-                        print("⏹ 녹음 종료 버튼 클릭");
-                        await stopRecording();
-                        await sendToServer(File(audioPath));
-                        //await evalAudio("tester1");
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const FeedbackResultPage()),
-                        );
-                      }
-                      setState(() {
-                        isRecording = !isRecording;
-                      });
+
+                      await toggleRecording();
+
+
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                      backgroundColor: isRecording || _isWebRecording ? Colors.red : Colors.green,
                       shape: CircleBorder(),
                       padding: EdgeInsets.all(16),
                     ),
                     child: Icon(Icons.call_end, size: 28, color: Colors.white),
                   ),
+
                   Icon(Icons.volume_up, size: 32, color: Colors.grey.shade600),
                 ],
               ),
@@ -240,42 +370,5 @@ class _CallPageState extends State<CallPage> {
       ),
     );
   }
-
-  Future<void> sendToServer(File audioFile) async {
-    var uri = Uri.parse('http://10.0.2.2:8000/chat/audio');
-    try {
-      var request = http.MultipartRequest('POST', uri)
-        ..files.add(await http.MultipartFile.fromPath('file', audioFile.path))
-        ..fields['user_id'] = 'tester1';
-
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        print("✅ 파일 전송 성공");
-        final responseBody = await response.stream.bytesToString();
-        print("🎧 응답 데이터: $responseBody");
-      } else {
-        print("❌ 파일 전송 실패: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("❌ 파일 전송 중 오류 발생: $e");
-    }
-  }
-
-  // Future<void> evalAudio(String userId) async {
-  //   var uri = Uri.parse("http://10.0.2.2:8000/evaluate-audio/?userId=$userId");
-  //
-  //   try {
-  //     var response = await http.get(uri);
-  //
-  //     if (response.statusCode == 200) {
-  //       var result = jsonDecode(response.body);
-  //       print("✅ 평가 결과: $result");
-  //     } else {
-  //       print("❌ 서버 오류: ${response.statusCode}");
-  //     }
-  //   } catch (e) {
-  //     print("❌ 평가 요청 실패: $e");
-  //   }
-  // }
 }
+

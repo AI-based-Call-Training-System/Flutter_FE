@@ -1,18 +1,22 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'config.dart';  // 추가
 
 class ApiService {
-  final String baseUrl = 'http://10.0.2.2:3000/auth';
+  final String baseUrl = '$BASE_URL/auth'; 
 
   // 회원가입
-  Future<bool> signup(String phone, String password, String name) async {
+  Future<bool> signup(String phone, String password, String name, String userId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/signup'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'phoneNumber': phone,
         'password': password,
-        'id': name,
+
+        'name': name,
+        'userId': userId,
+
       }),
     );
 
@@ -42,4 +46,23 @@ class ApiService {
       return false;
     }
   }
+
+  Future<bool> checkDuplicateId(String userId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/check-id'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'userId': userId}),
+    );
+
+    if (response.statusCode == 409) {
+      return true; // 중복됨
+    } else if (response.statusCode == 200) {
+      return false; // 사용 가능
+    } else {
+      print("아이디 중복 확인 실패: ${response.statusCode}");
+      return false;
+    }
+  }
+
 }
+

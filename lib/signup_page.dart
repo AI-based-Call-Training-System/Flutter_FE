@@ -17,19 +17,32 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _idController = TextEditingController();
 
   bool _isLoading = false;
 
   void _signup() async {
+    print("회원가입 시작");
+    
+    final isDuplicate = await ApiService().checkDuplicateId(_idController.text.trim());
+    if (isDuplicate) {
+      _showErrorDialog("중복된 아이디", "이미 사용 중인 아이디입니다.");
+      return;
+    }
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
     final password = _passwordController.text.trim();
 
     setState(() => _isLoading = true);
 
-    final success = await ApiService().signup(phone, password, name);
+    final success = await ApiService().signup(
+      phone,
+      password,
+      _nameController.text.trim(),
+      _idController.text.trim()
+    );
 
-    setState(() => _isLoading = false);
+    //setState(() => _isLoading = false);
 
     if (success) {
       Navigator.pushReplacement(
@@ -88,6 +101,20 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
               ),
               SizedBox(height: 20),
+              Text("아이디"),
+              SizedBox(height: 5),
+              TextFormField(
+                controller: _idController,
+                decoration: InputDecoration(
+                  hintText: '아이디를 입력해주세요',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return '아이디를 입력해주세요';
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
               Text("전화번호"),
               SizedBox(height: 5),
               TextFormField(
@@ -136,7 +163,14 @@ class _SignUpPageState extends State<SignUpPage> {
                       if (_passwordController.text != _confirmPasswordController.text) {
                         _showErrorDialog("오류", "비밀번호가 일치하지 않습니다.");
                       } else {
-                        _signup();
+                        // ✅ 여기 바로 아래에 비밀번호 형식 검사 추가!
+                        final password = _passwordController.text.trim();
+                        if (!RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$').hasMatch(password)) {
+                          _showErrorDialog("비밀번호 오류", "비밀번호는 영문+숫자 포함 8자 이상이어야 합니다.");
+                          return;
+                        }
+
+                        _signup(); // 최종 가입 실행
                       }
                     }
                   },
