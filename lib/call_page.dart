@@ -20,6 +20,11 @@ import 'package:http/http.dart' as http;
 
 
 import 'feedback_result_page.dart';
+import 'dart:typed_data';
+
+//userid 참조 매니져
+import '../pref/pref_manger.dart';
+
 
 
 class CallPage extends StatefulWidget {
@@ -60,7 +65,7 @@ class _CallPageState extends State<CallPage> {
       requestMicrophonePermission();
       player!.openPlayer();
     }
-
+  }
   @override
   void dispose() {
 
@@ -227,6 +232,107 @@ class _CallPageState extends State<CallPage> {
 
   }
 
+
+  // GEMINI 오디오 객체 관리
+  static html.AudioElement? _currentAudio;
+
+  //gemini tts 재생 함수 
+  static void playTTSWebFromBytes(Uint8List bytes) {
+    //GEMINI의 오디오 객체는 하나여야 하니,
+    //STATIC으로 관리
+    //중복 호출시 기존 객체 중지 및 종료
+    _currentAudio?.pause();
+    _currentAudio?.remove();
+
+    // 새 오디오 생성
+    // 바이트를 Blob으로 감싸기
+    final blob = html.Blob([bytes], 'audio/wav'); // wav 파일이면 audio/wav
+    //Blob을 임시 URL로 변환 (예:blob:http://localhost:1234/abcd...)
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    // AudioElement 생성
+    final audio = html.AudioElement()
+      ..src = url
+      ..autoplay = true
+      // 오디오 ui 객체는 필요없으므로 false
+      ..controls = false;
+
+    html.document.body!.append(audio);
+
+    // 재생이 끝나면 오디오 제거
+    audio.onEnded.listen((event) {
+      audio.remove();
+      html.Url.revokeObjectUrl(url);
+    });
+  }
+
+  // 사용자 음성 백엔드 전송 함수
+  Future<void> sendAudioToFastAPIWeb() async {
+    if (_audioBlob == null) {
+      print("녹음 파일이 없습니다.");
+      return;
+    }
+
+    try {
+      final reader = html.FileReader();
+      reader.readAsArrayBuffer(_audioBlob!);
+      await reader.onLoad.first;
+
+      // Uint8List로 직접 변환 (웹에서 안전)
+      final bytes = reader.result as Uint8List;
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://localhost:8000/chat/audio'),
+      );
+
+      //나중에 리팩토링 해야될거같음
+      //여기서 api를 정의할게 아니라 restapi_service.dart를 정의하는게 맞을듯
+
+      //api form 필드에 user_id 테스트 고정값-> 요청 사용자 id 로 전환
+      String? userId = await PrefManager.getUserId(); // nullable 내포
+      //아래줄 널값처리 안하면 에러남
+      request.fields['user_id'] = userId ?? 'noID'; // null이면 빈 문자열
+
+    
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: 'recorded_audio.webm',
+        ),
+      );
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print("User Input: ${data['user_input']}");
+        print("Gemini Reply: ${data['gemini_reply']}");
+        print("TTS Audio Path: ${data['tts_audio_path']}");
+
+        if (kIsWeb) {// 앱이 웹에서 구동중이라면
+          Uint8List bytes = base64Decode(data['tts_audio_base64']);
+          playTTSWebFromBytes(bytes); // 이전에 만든 Blob URL 재생 함수
+        } else {
+          print("앱에서의 tts play는 아직 구현되지 않았습니다.");
+        }
+
+      } else {
+        print("FastAPI 전송 실패: ${response.statusCode} / ${response.body}");
+      }
+    } catch (e) {
+      print("Exception 발생: $e");
+    }
+  }
+
+  
+  //#### 여기 중요함
+  // 웹브라우저에서 서버의 음원을 어떻게 받아 재생할 것인가?
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -321,20 +427,48 @@ class _CallPageState extends State<CallPage> {
             // 녹음 완료시만 보이는 피드백 확인 버튼
             if (isRecorded)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const FeedbackResultPage()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    minimumSize: Size(double.infinity, 50),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                  child: Text("피드백 확인"),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    // Gemini 답변받기 버튼
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (kIsWeb && _audioBlob != null) {
+                            await sendAudioToFastAPIWeb();
+                          } else {
+                            print("녹음 파일이 없습니다.");
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          minimumSize: Size(double.infinity, 50),
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        child: Text("Gemini 답변받기"),
+                      ),
+                    ),
+
+                    SizedBox(width: 16),
+
+                    // 기존 피드백 확인 버튼
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const FeedbackResultPage()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          minimumSize: Size(double.infinity, 50),
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        child: Text("피드백 확인"),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -370,5 +504,4 @@ class _CallPageState extends State<CallPage> {
       ),
     );
   }
-}
-
+  }

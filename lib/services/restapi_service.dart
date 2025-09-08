@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'config.dart';  // 추가
 
+// userid 참조용
+import '../pref/pref_manger.dart';
+
 class ApiService {
   final String baseUrl = '$BASE_URL/auth'; 
 
@@ -39,7 +42,11 @@ class ApiService {
       }),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
+      var data = json.decode(response.body);
+      String token = data['access_token']; // JSON에서 꺼내기
+      await PrefManager.saveJWTtoken(token);
+      await PrefManager.saveUserId(id);
       return true;
     } else {
       print("로그인 실패: ${response.statusCode} / ${response.body}");

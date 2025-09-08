@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'services/config.dart';
 
+//userid 참조 매니져
+import '../pref/pref_manger.dart';
+
 class FeedbackDetailPage extends StatefulWidget {
   const FeedbackDetailPage({Key? key}) : super(key: key);
 
@@ -13,16 +16,28 @@ class FeedbackDetailPage extends StatefulWidget {
 class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
   List<FeedbackHistory> historyList = [];
   bool isLoading = true;
-  final String userId = "tester1"; // 🔒 userId 고정
+  String? userId;
 
   @override
   void initState() {
     super.initState();
-    fetchHistory(userId);
+    _initUserAndFetchHistory();
+  }
+  
+  Future<void> _initUserAndFetchHistory() async {
+    String? id = await PrefManager.getUserId();
+    if (!mounted) return;
+
+    setState(() {
+      userId = id ?? 'noUser';
+    });
+
+    // 이제 null이 아니므로 fetchHistory 호출
+    await fetchHistory(userId!);
   }
 
   Future<void> fetchHistory(String userId) async {
-    final url = Uri.parse('http://localhost:3000/session/history?user_id=$userId');
+    final url = Uri.parse('http://localhost:8000/session/history?user_id=$userId');
     print('Requesting URL: $url');
 
     try {

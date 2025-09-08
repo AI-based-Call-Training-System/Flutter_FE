@@ -5,7 +5,9 @@ import 'dart:convert';
 import 'signup_page.dart';
 import 'home_page.dart';
 import '../services/restapi_service.dart'; // API 클래스 호출용
+import 'pref/pref_manger.dart';
 
+// 로그인페이지
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
