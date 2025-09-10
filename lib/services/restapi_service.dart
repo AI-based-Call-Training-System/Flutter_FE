@@ -46,12 +46,36 @@ class ApiService {
       var data = json.decode(response.body);
       String token = data['access_token']; // JSON에서 꺼내기
       await PrefManager.saveJWTtoken(token);
+
       await PrefManager.saveUserId(id);
+
       return true;
     } else {
       print("로그인 실패: ${response.statusCode} / ${response.body}");
       return false;
     }
+  }
+
+  Future<bool> getSession(String id) async{
+    String jwtToken=PrefManager.getJWTtoken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/history/$id/sessions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwtToken',
+      },
+    );
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+      String session = data['item']['sessionId']; // JSON에서 꺼내기
+      await PrefManager.saveSession(session);
+      return true;
+    } else {
+      print("getSession api 실패: ${response.statusCode} / ${response.body}");
+      return false;
+    }
+
   }
 
   Future<bool> checkDuplicateId(String userId) async {

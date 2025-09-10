@@ -37,6 +37,10 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
   }
 
   Future<void> fetchHistory(String userId) async {
+    // fast api ('http://localhost:8000/session/history?user_id=$userId')
+    //  ==> nestjs ('http://localhost:3000/history/tester1/sessions')
+    // 대화내용 한 세션 가져오기
+    //final url = Uri.parse('http://localhost:3000/history/$userId/$sessionId');
     final url = Uri.parse('http://localhost:8000/session/history?user_id=$userId');
     print('Requesting URL: $url');
 

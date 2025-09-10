@@ -272,7 +272,7 @@ class _CallPageState extends State<CallPage> {
       print("녹음 파일이 없습니다.");
       return;
     }
-
+    
     try {
       final reader = html.FileReader();
       reader.readAsArrayBuffer(_audioBlob!);
@@ -327,11 +327,7 @@ class _CallPageState extends State<CallPage> {
     }
   }
 
-  
-  //#### 여기 중요함
-  // 웹브라우저에서 서버의 음원을 어떻게 받아 재생할 것인가?
-
-
+//웹브라우저에서 음성파일을 받아 어떻게 재생할지
 
   @override
   Widget build(BuildContext context) {
