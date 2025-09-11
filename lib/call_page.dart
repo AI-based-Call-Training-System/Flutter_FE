@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 
 import 'dart:async';
 
+//api 서비스 호출용
+import '../services/restapi_service.dart'; // API 클래스 호출용
 
 // 웹 전용
 import 'dart:html' as html;
@@ -53,9 +55,19 @@ class _CallPageState extends State<CallPage> {
 
   String _statusText = "녹음 준비 완료";
 
+  // --- 세션 관리용 변수 ---
+  String? sessionId;
+
+  // --- 아이디 관리용 변수 ---
+  String? userId;
+
+
   @override
   void initState() {
     super.initState();
+    _getUseridAndSession();
+    print(sessionId);
+
     if (kIsWeb) {
       // 웹 초기화 없음
     } else {
@@ -65,6 +77,13 @@ class _CallPageState extends State<CallPage> {
       requestMicrophonePermission();
       player!.openPlayer();
     }
+  }
+
+//세션 생성 함수
+
+  Future<void> _getUseridAndSession() async {
+    userId= await PrefManager.getUserId(); // nullable 내포
+    sessionId = await SessionApiService().getSession(userId);
   }
   @override
   void dispose() {
@@ -289,8 +308,6 @@ class _CallPageState extends State<CallPage> {
       //나중에 리팩토링 해야될거같음
       //여기서 api를 정의할게 아니라 restapi_service.dart를 정의하는게 맞을듯
 
-      //api form 필드에 user_id 테스트 고정값-> 요청 사용자 id 로 전환
-      String? userId = await PrefManager.getUserId(); // nullable 내포
       //아래줄 널값처리 안하면 에러남
       request.fields['user_id'] = userId ?? 'noID'; // null이면 빈 문자열
 
@@ -334,8 +351,8 @@ class _CallPageState extends State<CallPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
+              child: Column(
+                children: [
             Image.asset(
               'assets/building.png',
               width: double.infinity,
@@ -495,9 +512,9 @@ class _CallPageState extends State<CallPage> {
                 ],
               ),
             ),
-          ],
-        ),
-      ),
+                ],
+              ),
+            ),
     );
   }
   }

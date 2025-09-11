@@ -56,28 +56,6 @@ class ApiService {
     }
   }
 
-  Future<bool> getSession(String id) async{
-    String jwtToken=PrefManager.getJWTtoken();
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/history/$id/sessions'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $jwtToken',
-      },
-    );
-    if (response.statusCode == 200) {
-      var data = json.decode(response.body);
-      String session = data['item']['sessionId']; // JSON에서 꺼내기
-      await PrefManager.saveSession(session);
-      return true;
-    } else {
-      print("getSession api 실패: ${response.statusCode} / ${response.body}");
-      return false;
-    }
-
-  }
-
   Future<bool> checkDuplicateId(String userId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/check-id'),
@@ -97,3 +75,34 @@ class ApiService {
 
 }
 
+class SessionApiService{
+  final String baseUrl = '$BASE_URL/history'; 
+  //세션 획득
+  Future<String?> getSession(String? id) async{
+    if (id==null) {
+      print("id가 정상적으로 들어오지 않았습니다");  
+      return null;
+    }
+
+    String? jwtToken=await PrefManager.getJWTtoken();
+    print(jwtToken);
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/$id/sessions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwtToken',
+      },
+    );
+    if (response.statusCode == 201) {
+      var data = json.decode(response.body);
+      String session = data['item']['sessionId']; // JSON에서 꺼내기
+      await PrefManager.saveSession(session);
+      return session;
+    } else {
+      print("getSession api 실패: ${response.statusCode} / ${response.body}");
+      return null;
+    }
+
+  }
+}
