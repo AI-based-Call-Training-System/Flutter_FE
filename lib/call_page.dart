@@ -60,13 +60,14 @@ class _CallPageState extends State<CallPage> {
 
   // --- 아이디 관리용 변수 ---
   String? userId;
+  String? token;
 
 
   @override
   void initState() {
     super.initState();
-    _getUseridAndSession();
-    print(sessionId);
+    _getUseridAndSessionAndtoken();
+
 
     if (kIsWeb) {
       // 웹 초기화 없음
@@ -81,9 +82,10 @@ class _CallPageState extends State<CallPage> {
 
 //세션 생성 함수
 
-  Future<void> _getUseridAndSession() async {
+  Future<void> _getUseridAndSessionAndtoken() async {
     userId= await PrefManager.getUserId(); // nullable 내포
     sessionId = await SessionApiService().getSession(userId);
+    token= await PrefManager.getJWTtoken();
   }
   @override
   void dispose() {
@@ -286,7 +288,8 @@ class _CallPageState extends State<CallPage> {
   }
 
   // 사용자 음성 백엔드 전송 함수
-  Future<void> sendAudioToFastAPIWeb() async {
+  Future<void> sendAudioToFastAPIWeb() async 
+  {
     if (_audioBlob == null) {
       print("녹음 파일이 없습니다.");
       return;
@@ -300,6 +303,7 @@ class _CallPageState extends State<CallPage> {
       // Uint8List로 직접 변환 (웹에서 안전)
       final bytes = reader.result as Uint8List;
 
+      /*
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('http://localhost:8000/chat/audio'),
@@ -322,25 +326,33 @@ class _CallPageState extends State<CallPage> {
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
+      */
+      
+      Map<String, dynamic> data = {}; // 빈 Map으로 초기화
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      if (userId !=null|| token !=null) {
+        data = await CallApiService().sendUserAudio(userId!,token!,bytes,sessionId!,);
+      }
+      else{
+        print("오디오 또는 userId가 지정되지 않음");
+
+      }
+    
+      if(data['user_input']!=null){
         print("User Input: ${data['user_input']}");
         print("Gemini Reply: ${data['gemini_reply']}");
         print("TTS Audio Path: ${data['tts_audio_path']}");
 
-        if (kIsWeb) {// 앱이 웹에서 구동중이라면
-          Uint8List bytes = base64Decode(data['tts_audio_base64']);
-          playTTSWebFromBytes(bytes); // 이전에 만든 Blob URL 재생 함수
-        } else {
-          print("앱에서의 tts play는 아직 구현되지 않았습니다.");
-        }
-
-      } else {
-        print("FastAPI 전송 실패: ${response.statusCode} / ${response.body}");
       }
-    } catch (e) {
-      print("Exception 발생: $e");
+      if (kIsWeb) {// 앱이 웹에서 구동중이라면
+      Uint8List bytes = base64Decode(data['tts_audio_base64']??"");
+      playTTSWebFromBytes(bytes); // 이전에 만든 Blob URL 재생 함수
+      } else {
+        print("앱에서의 tts play는 아직 구현되지 않았습니다.");
+      }
+      }
+      catch (e) {
+      print("sendauido예외발생: $e");
     }
   }
 

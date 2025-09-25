@@ -28,12 +28,12 @@ class PrefManager{
     }
 
     // session
-    static Future<void> saveSession(String session) async {
+    static Future<void> saveSessionId(String session) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('session', session);
     }
 
-    static Future<String?> getSession() async {
+    static Future<String?> getSessionId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('session'); // 없으면 null
     }
