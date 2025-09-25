@@ -3,6 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'services/config.dart';
 
+//userid 참조 매니져
+import '../pref/pref_manger.dart';
+import '../services/restapi_service.dart';
+
 class FeedbackDetailPage extends StatefulWidget {
   const FeedbackDetailPage({Key? key}) : super(key: key);
 
@@ -13,43 +17,52 @@ class FeedbackDetailPage extends StatefulWidget {
 class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
   List<FeedbackHistory> historyList = [];
   bool isLoading = true;
-  final String userId = "tester1"; // 🔒 userId 고정
-
+  String? userId;
+  String? sessionId;
   @override
   void initState() {
     super.initState();
-    fetchHistory(userId);
+    _initUserAndFetchHistory();
+  }
+  
+  Future<void> _initUserAndFetchHistory() async {
+    String? id = await PrefManager.getUserId();
+    String? session =await PrefManager.getSessionId();
+    if (!mounted) return;
+    setState(() {
+      userId = id ?? 'noUser';
+      sessionId= session ?? 'noSession';
+    });
+
+    // 이제 null이 아니므로 fetchHistory 호출
+    // session 가져오기
+    await fetchHistory(userId!,sessionId!);
   }
 
-  Future<void> fetchHistory(String userId) async {
-    final url = Uri.parse('http://localhost:3000/session/history?user_id=$userId');
-    print('Requesting URL: $url');
-
+  Future<void> fetchHistory(String userId,String sessionId) async {
+    // 대화내용 한 세션 가져오기
     try {
-      final response = await http.get(url);
 
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      List<dynamic> items = []; // 빈 Map으로 초기화
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> history = data['history'];
+      items = await HistoryApiService().getCurrnetHistory();
+      ///history/tester1/S-20250901-0001?skip=0&limit=20
 
-        if (mounted) {
-          setState(() {
-            historyList = history.map((item) => FeedbackHistory.fromJson(item)).toList();
-            isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-        }
-        print('Failed to load history with status code: ${response.statusCode}');
+      if (mounted) {
+        setState(() {
+          historyList = items.map((item) => FeedbackHistory.fromJson(item)).toList();
+          isLoading = false;
+        });
       }
-    } catch (e) {
+      else {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
+        print('실패함');
+      }}
+    catch (e) {
       print('Error occurred: $e');
       if (mounted) {
         setState(() {
