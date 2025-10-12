@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart'; // 로그인 페이지 import
 import 'signup_page.dart'; // 회원가입 페이지 import
+import 'main_navi.dart';
+import 'history_page.dart'; // 히스토리 페이지
+import 'feedback_result_page.dart'; // 피드백결과 페이지
 
 void main() {
   runApp(MyApp());
@@ -11,6 +14,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
+      theme: ThemeData(
+        fontFamily: 'NotoSansKR',  
+        useMaterial3: false,
+      ),
+
+      // history 리스트 -> feedback_result_page.dart로 전환
+      routes: {
+        '/feedbackResult': (context) => const FeedbackResultPage(),
+      },
+
       home: SplashScreen(), // 첫 화면을 스플래시 화면으로 설정
     );
   }

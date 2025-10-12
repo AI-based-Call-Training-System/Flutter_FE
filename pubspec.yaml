@@ -64,11 +64,17 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/call_image.png # To add assets to your application, add an assets section, like this:
-    - assets/heart_hands.png
-    - assets/home_nav.png
-    - assets/building.png
-    - assets/touch_image.png
+    - assets/ 
+
+  fonts:
+    - family: NotoSansKR
+      fonts:
+        - asset: assets/fonts/NotoSansKR-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansKR-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansKR-Bold.ttf
+          weight: 700
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
@@ -101,4 +107,4 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/call_image.png"  # 원하는 아이콘 경로 지정
+  image_path: "assets/call_image.png"  

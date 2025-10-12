@@ -1,101 +1,210 @@
 import 'package:flutter/material.dart';
 import 'call_page.dart';
+import 'main_navi.dart';
+import 'feedback_result_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+  static const double side = 20;
 
-  void navigateToCallPage(BuildContext context, String scenario) {
+  void _goCall(BuildContext context, String scenario) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => CallPage(scenario: scenario),
-      ),
+      MaterialPageRoute(builder: (_) => CallPage(scenario: scenario)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white, // ✅ 전체 배경 흰색
-      body: Column(
-        children: [
-          // ✅ 상단 배너
-          Image.asset(
-            'assets/home_nav.png',
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
+      backgroundColor: const Color(0xFFF4F4F6),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 24), // 하단 네비 여유
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-          // ✅ 검색창
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: '궁금한 내용을 입력해보세요',
-                suffixIcon: Icon(Icons.search),
-
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
+              // 상단 로고
+              Padding(
+                padding: const EdgeInsets.fromLTRB(side, 28, side, 20),
+                child: Row(
+                  children: [
+                    // assets에 넣어둔 새 로고
+                    Image.asset(
+                      'assets/logo_telpy.png',
+                      height: 38,
+                      fit: BoxFit.contain,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
+              // 배너
+              AspectRatio(
+                aspectRatio: 375 / 178,
+                child: Image.asset('assets/home_nav.png', fit: BoxFit.cover),
+              ),
+              const SizedBox(height: 24),
 
-          // ✅ 통화 시나리오 4개
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              childAspectRatio: 1,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: [
-                _buildScenarioCard(context, '학교', Icons.school),
-                _buildScenarioCard(context, '직장', Icons.apartment),
-                _buildScenarioCard(context, '안부인사', Icons.send),
-                _buildScenarioCard(context, '주문', Icons.assignment),
-              ],
-            ),
+              // 전화 예절
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text('전화 예절',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    )),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _EtiquetteCard(
+                        title: '예절1',
+                        icon: Icons.phone,
+                        background: const Color(0xFFFFE8D6),
+                        onTap: () => _goCall(context, '예절1'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _EtiquetteCard(
+                        title: '예절2',
+                        icon: Icons.list_alt,
+                        background: const Color(0xFFE7F0FF),
+                        onTap: () => _goCall(context, '예절2'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 최근 활동
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text('최근 활동',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    )),
+              ),
+              const SizedBox(height: 8),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    _RecentTile(
+                      leadingIcon: Icons.assignment_outlined,
+                      title: '주문1',
+                      subtitle: '카드, 초2, 초3, 중고급 한국어 교사 모집',
+                    ),
+                    SizedBox(height: 10),
+                    _RecentTile(
+                      leadingIcon: Icons.shopping_cart_outlined,
+                      title: '주문2',
+                      subtitle: '어학원 청소년의 진로성장지원프로그램',
+                    ),
+                    SizedBox(height: 10),
+                    _RecentTile(
+                      leadingIcon: Icons.airplanemode_active_outlined,
+                      title: '안부인사',
+                      subtitle: '업무연락마무리에 먼저 배우는 무료 교육',
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        currentIndex: 0,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: '기록'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '마이'),
-        ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildScenarioCard(BuildContext context, String title, IconData icon) {
-    return GestureDetector(
-      onTap: () => navigateToCallPage(context, title),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(1, 2)),
-          ],
+class _EtiquetteCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color background;
+  final VoidCallback onTap;
+  const _EtiquetteCard({
+    required this.title,
+    required this.icon,
+    required this.background,
+    required this.onTap,
+  });
+
+  @override //예절카드
+  Widget build(BuildContext context) {
+    return Material(
+      // color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 150,
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+              Icon(icon, size: 26, color: Colors.black54),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: Colors.grey.shade700),
-            SizedBox(height: 8),
-            Text(title, style: TextStyle(fontSize: 16)),
-          ],
-        ),
+      ),
+    );
+  }
+}
+
+class _RecentTile extends StatelessWidget {
+  final IconData leadingIcon;
+  final String title;
+  final String subtitle;
+  const _RecentTile({
+    required this.leadingIcon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override // 최근활동
+  Widget build(BuildContext context) {
+    return Container(
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(leadingIcon, size: 24, color: Colors.black87),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 14)),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: Colors.black38),
+        ],
       ),
     );
   }
