@@ -77,29 +77,57 @@ class ApiService {
 
 }
 
+// 세션 관리 api
 class SessionApiService{
   final String baseUrl = '$BASE_URL/history'; 
+  String session="";
+  String scenario="";
   //세션 획득
-  Future<String?> getSession(String? id) async{
+  // !!! 만약 여기 페이지를 나갔다가 다시 들어오면 세션은 재발급 되어 벌임
+  // 1. 대화한 상태에서 갱신 2. 대화를 아직 안한 상태에서 갱신
+  // 이 로직을 생각해서 설계해보면 좋을 듯
+
+  Future<String?> getSession(String? id,String? scenario) async{
     if (id==null) {
       print("id가 정상적으로 들어오지 않았습니다");  
       return null;
     }
+    
+    /////////======풀지 못한 문제: session이 이 페이지 새로 올때마다 db에 써지는가?
+    // // 1. 로컬에 저장된 기존 세션 ID가 있는지 확인
+    // String? existingSession = await PrefManager.getSessionId();
+    
+    // // 💡 기존 세션이 있다면 그것을 반환하고 서버 호출을 건너뜁니다.
+    // //    (대화 기록을 이어서 사용하려는 경우)
+    // if (existingSession != null && existingSession.isNotEmpty) {
+    //     print("✅ 로컬에서 기존 세션 ID 재사용: $existingSession");
+    //     return existingSession;
+    // }
 
+    // // 2. 기존 세션이 없으면 (새 대화 시작) 서버에 새 세션 발급 요청
+    
+    
+    
     String? jwtToken=await PrefManager.getJWTtoken();
     print(jwtToken);
-
+    //서버에 부쳐서 세션을 획득
+    // 이때 서버에 senario-> title 도 저장할 거임
     final response = await http.post(
       Uri.parse('$baseUrl/$id/sessions'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $jwtToken',
       },
+      body: jsonEncode({
+        'title': scenario
+      }),
+      
     );
     if (response.statusCode == 201) {
       var data = json.decode(response.body);
-      String session = data['item']['sessionId']; // JSON에서 꺼내기
+      session = data['item']['sessionId']; // JSON에서 꺼내기
       print("서버에서 갓 가져온 세션: $session");
+      // 세션 저장
       await PrefManager.saveSessionId(session);
       return session;
     } else {
@@ -108,12 +136,24 @@ class SessionApiService{
     }
 
   }
+  // //선택 시나리오 저장
+  // Future<void> setScenario(String? scenario) async {
+  //   this.scenario=scenario;
+  // }
+  // //선택 시나리오 가져오기
+  // Future<String?> getScenario() async{
+  //   if(scenario==""){
+  //     return "noscenario";
+  //     }
+  //   return scenario;
+  // }
 }
 
+// ai 대화시 api
 class CallApiService{
 
     // 사용자 음성 백엔드 전송 함수
-  Future<Map<String, dynamic>> sendUserAudio(String userId, String token, Uint8List bytes,String sessionId) async {
+  Future<Map<String, dynamic>> sendUserAudio(String userId, String token, Uint8List bytes,String sessionId,String scenario) async {
     
     try {
       var request = http.MultipartRequest(
@@ -122,11 +162,14 @@ class CallApiService{
         Uri.parse('http://localhost:8000/chat/audio'),
       );
 
+      request.headers['Authorization'] = 'Bearer $token';
+
       //아래줄 널값처리 안하면 에러남
       request.fields['user_id'] = userId; //?? 'noID'; // null이면 빈 문자열
       request.fields['session_id']=sessionId;//??'noSessionId';
-      request.fields['token']=token;//대화 내용 추가할 때 필요한 토큰 추가
+      request.fields['scenario']=scenario;//??'noSessionId';
 
+      
     
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -149,7 +192,9 @@ class CallApiService{
   }
 }
 
+//대화 가져올 때 쓰는거
 class HistoryApiService{
+    // 가장 최근의 대화
     Future<List<dynamic>> getCurrnetHistory() async {
 
     String? jwtToken=await PrefManager.getJWTtoken();
@@ -164,9 +209,8 @@ class HistoryApiService{
           'Authorization': 'Bearer $jwtToken',
         },
       );
-      print("이상하네: $jwtToken");
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      // print('Response Status Code: ${response.statusCode}');
+      // print('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -189,3 +233,20 @@ class HistoryApiService{
 
   }
 }
+
+class FeedbackApiService{
+
+    Future<Map<String, dynamic>> getFeedback() async {
+
+    String? sessionId=await PrefManager.getSessionId();
+    final response = await http.get(
+      Uri.parse('http://localhost:8000//evaluate-audio/$sessionId'),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('피드백 결과를 불러오지 못했습니다.');
+    }
+  
+    }}

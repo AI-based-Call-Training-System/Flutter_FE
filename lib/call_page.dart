@@ -62,10 +62,12 @@ class _CallPageState extends State<CallPage> {
   String? userId;
   String? token;
 
+  String? currentScenario;
 
   @override
   void initState() {
     super.initState();
+    currentScenario=widget.scenario;
     _getUseridAndSessionAndtoken();
 
 
@@ -84,7 +86,7 @@ class _CallPageState extends State<CallPage> {
 
   Future<void> _getUseridAndSessionAndtoken() async {
     userId= await PrefManager.getUserId(); // nullable 내포
-    sessionId = await SessionApiService().getSession(userId);
+    sessionId = await SessionApiService().getSession(userId,currentScenario);
     token= await PrefManager.getJWTtoken();
   }
   @override
@@ -331,7 +333,7 @@ class _CallPageState extends State<CallPage> {
       Map<String, dynamic> data = {}; // 빈 Map으로 초기화
 
       if (userId !=null|| token !=null) {
-        data = await CallApiService().sendUserAudio(userId!,token!,bytes,sessionId!,);
+        data = await CallApiService().sendUserAudio(userId!,token!,bytes,sessionId!,currentScenario!);
       }
       else{
         print("오디오 또는 userId가 지정되지 않음");
