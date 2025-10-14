@@ -30,7 +30,7 @@ class HistoryItem {
     // tag 기반 카테고리 매핑
     HistoryCategory cat = HistoryCategory.all;
     if (json['tags'] != null && json['tags'].isNotEmpty) {
-      final tag = json['tags'][0] as String;
+      final tag = json['tags'] as String;
       switch (tag) {
         case 'school':
           cat = HistoryCategory.school;
@@ -64,6 +64,7 @@ class HistoryItem {
 
 /// 카테고리 → 아이콘 매핑
 const Map<HistoryCategory, String> kCategoryAsset = {
+  
   HistoryCategory.school: 'assets/school.png',
   HistoryCategory.work: 'assets/office.png',
   HistoryCategory.greeting: 'assets/plane.png',
@@ -96,34 +97,53 @@ class _HistoryPageState extends State<HistoryPage> {
 
   /// NestJS API 호출
   Future<void> _fetchSessions() async {
+    
     final uri = Uri.parse(
         'http://localhost:3000/history/${widget.userId}/sessions');
-
+    print(uri);
     final token = await PrefManager.getJWTtoken();
-    try {
-      final res = await http.get(uri,  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer $token',  // JWT 토큰 헤더에 추가
-      },);
-      print(res.statusCode);
-      if (res.statusCode == 200) {
-      final Map<String, dynamic> jsonMap = json.decode(res.body);
-      final List<dynamic> data = jsonMap['items']; // 'items' 안에 실제 배열 있음
-        setState(() {
-          _items = data.map((e) => HistoryItem.fromJson(e)).toList();
-          _loading = false;
-        });
-      } else {
-        print(res.statusCode);
-        setState(() => _loading = false);
+try {
+  final res = await http.get(
+    uri,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
 
-        // TODO: 에러 처리
-      }
-    } catch (e) {
+  print("statusCode: ${res.statusCode}");
+  print("body type: ${res.body.runtimeType}");
+  print("body raw: ${res.body}");
+
+  if (res.statusCode == 200) {
+    final decoded = json.decode(res.body);
+
+    // 🧩 1. decoded가 리스트인지 맵인지 확인
+    if (decoded is List) {
+      // 서버가 리스트만 반환한 경우
+      setState(() {
+        _items = decoded.map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e))).toList();
+        _loading = false;
+      });
+    } else if (decoded is Map && decoded.containsKey('items')) {
+      // 서버가 { ok, items: [...] } 형태로 반환한 경우
+      final data = decoded['items'] as List<dynamic>;
+      setState(() {
+        _items = data.map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e))).toList();
+        _loading = false;
+      });
+    } else {
+      print("⚠️ 예상치 못한 응답 구조: $decoded");
       setState(() => _loading = false);
-      print("여기에러:$e");
-      // TODO: 에러 처리
     }
+  } else {
+    setState(() => _loading = false);
+    print('❌ Error: status code ${res.statusCode}');
+  }
+} catch (e) {
+  setState(() => _loading = false);
+  print("여기에러: $e");
+}
   }
 
   List<HistoryItem> get _filteredItems {

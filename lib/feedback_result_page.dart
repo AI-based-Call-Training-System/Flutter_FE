@@ -235,6 +235,7 @@ class _ScoreRow extends StatelessWidget {
   }
 }
 
+
 class _SemiGaugePainter extends CustomPainter {
   final double percent;
 

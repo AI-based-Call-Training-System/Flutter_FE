@@ -55,25 +55,29 @@ class TrainingPage extends StatelessWidget {
               _ScenarioTile(
                 imagePath: 'assets/school.png',
                 title: '학교',
-                subtitle: '기초, 초급1, 초급2, 중급2 한국어 교실 모집',
+                tag: 'school',
+                subtitle: '학과사무실에서 학사일정을 문의하기 망설여 진다면?',
               ),
               const SizedBox(height: 20),
               _ScenarioTile(
                 imagePath: 'assets/office.png',
                 title: '직장',
-                subtitle: '기초, 초급1, 초급2, 중급2 한국어 교실 모집',
+                tag: 'work',
+                subtitle: '직장에서 조리있고 간결하게 핵심만 대화하고 싶다면?',
               ),
               const SizedBox(height: 20),
               _ScenarioTile(
                 imagePath: 'assets/cart.png',
                 title: '주문',
-                subtitle: '이주배경 청소년의 진로성장지원프로그램',
+                tag: 'order',
+                subtitle: '빨리빨리 배달음식점에 조바심 내지않고 치킨을 시키고 싶다면?',
               ),
               const SizedBox(height: 20),
               _ScenarioTile(
                 imagePath: 'assets/plane.png',
                 title: '안부인사',
-                subtitle: '외국인주민에게 직접 배우는 무료 교육',
+                tag: 'greeting',
+                subtitle: '연락이 망설여지는 먼 지인에게 따뜻한 연락을 하고 싶다면?',
               ),
             ]
                 .map((w) => Padding(
@@ -91,20 +95,22 @@ class TrainingPage extends StatelessWidget {
 class _ScenarioTile extends StatelessWidget {
   final String imagePath;
   final String title;
+  final String tag;
   final String subtitle;
 
   const _ScenarioTile({
     super.key,
     required this.imagePath,
     required this.title,
-    required this.subtitle,
+    required this.tag,
+    required this.subtitle
   });
 
   @override
   Widget build(BuildContext context) {
     void go() => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => CallPage(scenario: title)),
+          MaterialPageRoute(builder: (_) => CallPage(scenario: tag)),
         );
 
     return Material(

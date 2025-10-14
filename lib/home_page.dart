@@ -98,19 +98,19 @@ class HomePage extends StatelessWidget {
                     _RecentTile(
                       leadingIcon: Icons.assignment_outlined,
                       title: '주문1',
-                      subtitle: '카드, 초2, 초3, 중고급 한국어 교사 모집',
+                      subtitle: '빨리빨리 배달음식점에 조바심 내지않고 치킨을 시키고 싶다면?',
                     ),
                     SizedBox(height: 10),
                     _RecentTile(
                       leadingIcon: Icons.shopping_cart_outlined,
                       title: '주문2',
-                      subtitle: '어학원 청소년의 진로성장지원프로그램',
+                      subtitle: '빨리빨리 배달음식점에 조바심 내지않고 치킨을 시키고 싶다면?',
                     ),
                     SizedBox(height: 10),
                     _RecentTile(
                       leadingIcon: Icons.airplanemode_active_outlined,
                       title: '안부인사',
-                      subtitle: '업무연락마무리에 먼저 배우는 무료 교육',
+                      subtitle: '연락이 망설여지는 먼 지인에게 따뜻한 연락을 하고 싶다면?',
                     ),
                   ],
                 ),

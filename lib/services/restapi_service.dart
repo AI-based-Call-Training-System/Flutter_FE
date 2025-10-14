@@ -110,6 +110,12 @@ class SessionApiService{
     
     String? jwtToken=await PrefManager.getJWTtoken();
     print("원래 토큰: $jwtToken");
+    Map<String, String> title = {
+      'order': '주문',
+      'school': '학교',
+      'greeting':'안부인사',
+      'work':'직장'
+    };    
     //서버에 부쳐서 세션을 획득
     // 이때 서버에 senario-> title 도 저장할 거임
     final response = await http.post(
@@ -119,7 +125,8 @@ class SessionApiService{
         'Authorization': 'Bearer $jwtToken',
       },
       body: jsonEncode({
-        'title': scenario
+        'tag': scenario,
+        'title':title[scenario]
       }),
       
     );

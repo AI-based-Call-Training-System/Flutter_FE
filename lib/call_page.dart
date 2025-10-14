@@ -219,7 +219,7 @@ class _CallPageState extends State<CallPage> {
     final url = html.Url.createObjectUrlFromBlob(_audioBlob!);
     final audio = html.AudioElement()
       ..src = url
-      ..controls = true
+      ..controls = false
       ..autoplay = true;
     html.document.body!.append(audio);
 
@@ -286,11 +286,13 @@ class _CallPageState extends State<CallPage> {
       ..controls = false;
 
     html.document.body!.append(audio);
+    _currentAudio = audio;
 
     // 재생이 끝나면 오디오 제거
     audio.onEnded.listen((event) {
       audio.remove();
       html.Url.revokeObjectUrl(url);
+      if (_currentAudio == audio) _currentAudio = null;
     });
   }
 
@@ -539,6 +541,9 @@ class _CallPageState extends State<CallPage> {
                 child: ElevatedButton(
                   onPressed: (isRecorded && sessionId != null)
                       ? () {
+                                // 현재 재생 중인 오디오 제거
+                          _currentAudio?.remove();
+                          _currentAudio = null;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
