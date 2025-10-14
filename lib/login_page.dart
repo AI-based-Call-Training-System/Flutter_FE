@@ -6,6 +6,7 @@ import 'signup_page.dart';
 import 'home_page.dart';
 import '../services/restapi_service.dart'; // API 클래스 호출용
 import 'pref/pref_manger.dart';
+import 'main_navi.dart';
 
 // 로그인페이지
 class LoginPage extends StatefulWidget {
@@ -36,9 +37,10 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = false);
 
     if (success) {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (_) => const MainScreen()), // ✅ 여기!
+        (route) => false,  // 뒤로가기 시 로그인 화면으로 안 돌아오게 스택 제거
       );
     } else {
       _showErrorDialog("로그인 실패", "아이디 또는 비밀번호가 올바르지 않습니다.");
