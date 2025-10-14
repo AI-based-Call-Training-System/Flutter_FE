@@ -27,7 +27,8 @@ class _FeedbackLoadingPageState extends State<FeedbackLoadingPage>
         if (status == AnimationStatus.completed) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const FeedbackResultPage()),
+            MaterialPageRoute(builder: (_) => const FeedbackResultPage(initialSessionId: "S-01K7G5NA7A3GJ3T0BB2BFAFX9Z"
+            )),
           );
         }
       });

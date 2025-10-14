@@ -338,6 +338,7 @@ class _CallPageState extends State<CallPage> {
       Map<String, dynamic> data = {}; // 빈 Map으로 초기화
 
       if (userId !=null|| token !=null) {
+        print("api 호출");
         data = await CallApiService().sendUserAudio(userId!,token!,bytes,sessionId!,currentScenario!);
       }
       else{
@@ -351,9 +352,12 @@ class _CallPageState extends State<CallPage> {
         print("TTS Audio Path: ${data['tts_audio_path']}");
 
       }
+      else{print("userinput이 null$data");}
+
       if (kIsWeb) {// 앱이 웹에서 구동중이라면
       Uint8List bytes = base64Decode(data['tts_audio_base64']??"");
       playTTSWebFromBytes(bytes); // 이전에 만든 Blob URL 재생 함수
+      print("blob 재생");
       } else {
         print("앱에서의 tts play는 아직 구현되지 않았습니다.");
       }
@@ -402,10 +406,11 @@ class _CallPageState extends State<CallPage> {
               // AI 음성 듣기
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: ()async {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('AI 음성 재생 준비중입니다.')),
                     );
+                    await sendAudioToFastAPIWeb();
                   },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: lightColor, width: 1.2),
@@ -532,12 +537,13 @@ class _CallPageState extends State<CallPage> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: isRecorded
+                  onPressed: (isRecorded && sessionId != null)
                       ? () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const FeedbackResultPage(),
+                              builder: (context) => 
+                              FeedbackResultPage(initialSessionId:sessionId!),
                             ),
                           );
                         }

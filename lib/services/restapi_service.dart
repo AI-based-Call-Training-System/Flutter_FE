@@ -109,7 +109,7 @@ class SessionApiService{
     
     
     String? jwtToken=await PrefManager.getJWTtoken();
-    print(jwtToken);
+    print("원래 토큰: $jwtToken");
     //서버에 부쳐서 세션을 획득
     // 이때 서버에 senario-> title 도 저장할 거임
     final response = await http.post(
@@ -161,13 +161,15 @@ class CallApiService{
         
         Uri.parse('http://localhost:8000/chat/audio'),
       );
+      print("chat/audio에서 토큰: $token");
 
-      request.headers['Authorization'] = 'Bearer $token';
+      // request.headers['Authorization'] = 'Bearer $token';
 
       //아래줄 널값처리 안하면 에러남
       request.fields['user_id'] = userId; //?? 'noID'; // null이면 빈 문자열
       request.fields['session_id']=sessionId;//??'noSessionId';
       request.fields['scenario']=scenario;//??'noSessionId';
+      request.fields['token']=token;//??'noSessionId';
 
       
     
@@ -195,11 +197,12 @@ class CallApiService{
 //대화 가져올 때 쓰는거
 class HistoryApiService{
     // 가장 최근의 대화
-    Future<List<dynamic>> getCurrnetHistory() async {
+    Future<List<dynamic>> 
+    getCurrnetHistory(String sessionId) async {
 
     String? jwtToken=await PrefManager.getJWTtoken();
     String? userId=await PrefManager.getUserId();
-    String? sessionId=await PrefManager.getSessionId();
+    // String? sessionId=await PrefManager.getSessionId();
 
     try{
       final response = await http.get(
@@ -236,11 +239,11 @@ class HistoryApiService{
 
 class FeedbackApiService{
 
-    Future<Map<String, dynamic>> getFeedback() async {
+    Future<Map<String, dynamic>> getFeedback(String sessionId) async {
 
-    String? sessionId=await PrefManager.getSessionId();
+    // String? sessionId=await PrefManager.getSessionId();
     final response = await http.get(
-      Uri.parse('http://localhost:8000//evaluate-audio/$sessionId'),
+      Uri.parse('http://localhost:8000/evaluate_audio/$sessionId'),
     );
 
     if (response.statusCode == 200) {

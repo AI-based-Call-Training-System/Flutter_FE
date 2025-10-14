@@ -4,6 +4,7 @@ import 'my_page.dart';
 import 'training_page.dart';
 import 'history_page.dart'; // 히스토리 페이지
 import 'feedback_result_page.dart'; // 피드백결과 페이지
+import './pref/pref_manger.dart';
 
 
 class MainScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _MainScreenState extends State<MainScreen> {
   final _pages = const [
     HomePage(),        // 홈
     TrainingPage(),    // 통화훈련
-    HistoryPage(),     // 히스토리
+    HistoryPage(userId: 'tester1',),     // 히스토리
     MyPageScreen(),    // MY
   ];
 
