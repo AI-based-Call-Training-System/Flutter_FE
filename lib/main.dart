@@ -63,7 +63,7 @@ class SplashScreen extends StatelessWidget {
             // ✅ "시작하기" 버튼 → 회원가입 페이지로 이동
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Color(0xFF06B69E),
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 100, vertical: 15),
               ),
@@ -91,7 +91,7 @@ class SplashScreen extends StatelessWidget {
                   children: <TextSpan>[
                     TextSpan(
                       text: '로그인',
-                      style: TextStyle(color: Colors.green),
+                      style: TextStyle(color: Color(0xFF06B69E)),
                     ),
                   ],
                 ),

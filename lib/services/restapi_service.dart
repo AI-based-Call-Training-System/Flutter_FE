@@ -125,8 +125,8 @@ class SessionApiService{
         'Authorization': 'Bearer $jwtToken',
       },
       body: jsonEncode({
-        'tag': scenario,
-        'title':title[scenario]
+        'tags': scenario,
+        'title':title[scenario],
       }),
       
     );
@@ -138,6 +138,7 @@ class SessionApiService{
       await PrefManager.saveSessionId(session);
       return session;
     } else {
+      print("${scenario} ${title[scenario]}");
       print("getSession api 실패: ${response.statusCode} / ${response.body}");
       return null;
     }

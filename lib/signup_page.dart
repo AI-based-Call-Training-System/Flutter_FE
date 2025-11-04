@@ -153,7 +153,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Color(0xFF06B69E),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -198,7 +198,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       children: <TextSpan>[
                         TextSpan(
                           text: '로그인',
-                          style: TextStyle(color: Colors.green),
+                          style: TextStyle(color: Color(0xFF06B69E)),
                         ),
                       ],
                     ),

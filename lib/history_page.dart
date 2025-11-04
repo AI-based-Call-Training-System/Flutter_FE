@@ -123,6 +123,7 @@ try {
       // 서버가 리스트만 반환한 경우
       setState(() {
         _items = decoded.map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e))).toList();
+        _items = _applyTitleNumbering(_items);
         _loading = false;
       });
     } else if (decoded is Map && decoded.containsKey('items')) {
@@ -130,6 +131,7 @@ try {
       final data = decoded['items'] as List<dynamic>;
       setState(() {
         _items = data.map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e))).toList();
+        _items = _applyTitleNumbering(_items);
         _loading = false;
       });
     } else {
@@ -146,6 +148,38 @@ try {
 }
   }
 
+List<HistoryItem> _applyTitleNumbering(List<HistoryItem> items) {
+  // 1. 제목별 총 등장 횟수 계산
+  final Map<String, int> titleCount = {};
+  for (final item in items) {
+    titleCount[item.title] = (titleCount[item.title] ?? 0) + 1;
+  }
+
+  // 2. 현재 붙일 번호를 관리 (총 개수부터 시작)
+  final Map<String, int> currentNum = Map.from(titleCount);
+
+  final List<HistoryItem> numbered = [];
+
+  // 3. 아이템 순회하며 역순 번호 붙이기
+  for (final item in items) {
+    final title = item.title;
+    final count = currentNum[title]!; // 현재 번호
+    currentNum[title] = count - 1;   // 다음 아이템은 1 감소
+
+    final newTitle = '$title$count';
+
+    numbered.add(HistoryItem(
+      id: item.id,
+      userId: item.userId,
+      sessionId: item.sessionId,
+      title: newTitle,
+      subtitle: item.subtitle,
+      category: item.category,
+    ));
+  }
+
+  return numbered;
+}
   List<HistoryItem> get _filteredItems {
     if (_selected == HistoryCategory.all) return _items;
     return _items.where((e) => e.category == _selected).toList();

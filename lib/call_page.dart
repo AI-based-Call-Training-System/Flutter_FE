@@ -479,11 +479,31 @@ class _CallPageState extends State<CallPage> {
         ),
       ),
 
+      // body: SafeArea(
+      //   child: Stack(
+      //     alignment: Alignment.topCenter,
+      //     children: [
+      //       // 원형 그라데이션 배경
+      //       Container(
+      //         width: double.infinity,
+      //         height: 220, // 이미지와 동일한 높이
+      //         decoration: BoxDecoration(
+      //           shape: BoxShape.circle,
+      //           gradient: RadialGradient(
+      //             colors: [
+      //               Color(0xFF06B69E), // 중심 색상
+      //               Color(0xFF06B69E).withOpacity(0.0), // 바깥쪽으로 투명하게
+      //             ],
+      //             radius: 0.8, // 원이 퍼지는 정도
+      //             center: Alignment.topCenter, // 이미지 중심에 맞춤
+      //           ),
+      //         ),
+      //       ),
       body: SafeArea(
               child: Column(
                 children: [
             Image.asset(
-              'assets/building.png',
+              'assets/call_cart.png',
               width: double.infinity,
               height: 220,
               fit: BoxFit.contain,
@@ -501,7 +521,7 @@ class _CallPageState extends State<CallPage> {
                   const Flexible(
                     child: _Balloon(
                       text:
-                          '"학과 사무실에 전화를 걸어 장학금에 대해 문의하고 있습니다..."',
+                          '"치킨집에 전화를 걸어 치킨 종류 1마리와 콜라를 전자정보 3관으로 시키고 있습니다..."',
                     ),
                   ),
                 ],
