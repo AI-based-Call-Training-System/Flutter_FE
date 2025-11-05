@@ -72,8 +72,8 @@ const Map<HistoryCategory, String> kCategoryAsset = {
 };
 
 class HistoryPage extends StatefulWidget {
-  final String userId;
-  const HistoryPage({super.key, required this.userId});
+  // final String userId;
+  const HistoryPage({super.key});
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -97,9 +97,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
   /// NestJS API 호출
   Future<void> _fetchSessions() async {
-    
+    String? userId=await PrefManager.getUserId();
     final uri = Uri.parse(
-        'http://localhost:3000/history/${widget.userId}/sessions');
+        'http://localhost:3000/history/${userId}/sessions');
     print(uri);
     final token = await PrefManager.getJWTtoken();
 try {
