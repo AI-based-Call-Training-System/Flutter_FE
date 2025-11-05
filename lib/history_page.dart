@@ -4,12 +4,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'feedback_result_page.dart';
 import './pref/pref_manger.dart';
-/// 카테고리 정의
+
 enum HistoryCategory { all, school, work, order, greeting }
 
-/// 세션 히스토리 항목 모델
 class HistoryItem {
-  final String? id; // null 허용
+  final String? id;
   final String userId;
   final String sessionId;
   final String title;
@@ -25,9 +24,7 @@ class HistoryItem {
     required this.category,
   });
 
-  /// JSON → 모델 변환
   factory HistoryItem.fromJson(Map<String, dynamic> json) {
-    // tag 기반 카테고리 매핑
     HistoryCategory cat = HistoryCategory.all;
     if (json['tags'] != null && json['tags'].isNotEmpty) {
       final tag = json['tags'] as String;
@@ -62,9 +59,7 @@ class HistoryItem {
   }
 }
 
-/// 카테고리 → 아이콘 매핑
 const Map<HistoryCategory, String> kCategoryAsset = {
-  
   HistoryCategory.school: 'assets/school.png',
   HistoryCategory.work: 'assets/office.png',
   HistoryCategory.greeting: 'assets/plane.png',
@@ -80,7 +75,7 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  static const pageBg = Color(0xFFF4F4F6);
+  static const pageBg = Color(0xFFF4F6F8);
   static const green = Color(0xFF169976);
   static const gray50 = Color(0xFF656873);
 
@@ -95,91 +90,75 @@ class _HistoryPageState extends State<HistoryPage> {
     _fetchSessions();
   }
 
-  /// NestJS API 호출
   Future<void> _fetchSessions() async {
-    
-    final uri = Uri.parse(
-        'http://localhost:3000/history/${widget.userId}/sessions');
-    print(uri);
+    final uri =
+        Uri.parse('http://localhost:3000/history/${widget.userId}/sessions');
     final token = await PrefManager.getJWTtoken();
-try {
-  final res = await http.get(
-    uri,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-  );
+    try {
+      final res = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-  print("statusCode: ${res.statusCode}");
-  print("body type: ${res.body.runtimeType}");
-  print("body raw: ${res.body}");
-
-  if (res.statusCode == 200) {
-    final decoded = json.decode(res.body);
-
-    // 🧩 1. decoded가 리스트인지 맵인지 확인
-    if (decoded is List) {
-      // 서버가 리스트만 반환한 경우
-      setState(() {
-        _items = decoded.map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e))).toList();
-        _items = _applyTitleNumbering(_items);
-        _loading = false;
-      });
-    } else if (decoded is Map && decoded.containsKey('items')) {
-      // 서버가 { ok, items: [...] } 형태로 반환한 경우
-      final data = decoded['items'] as List<dynamic>;
-      setState(() {
-        _items = data.map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e))).toList();
-        _items = _applyTitleNumbering(_items);
-        _loading = false;
-      });
-    } else {
-      print("⚠️ 예상치 못한 응답 구조: $decoded");
+      if (res.statusCode == 200) {
+        final decoded = json.decode(res.body);
+        if (decoded is List) {
+          setState(() {
+            _items = decoded
+                .map((e) => HistoryItem.fromJson(
+                    Map<String, dynamic>.from(e)))
+                .toList();
+            _items = _applyTitleNumbering(_items);
+            _loading = false;
+          });
+        } else if (decoded is Map && decoded.containsKey('items')) {
+          final data = decoded['items'] as List<dynamic>;
+          setState(() {
+            _items = data
+                .map((e) => HistoryItem.fromJson(
+                    Map<String, dynamic>.from(e)))
+                .toList();
+            _items = _applyTitleNumbering(_items);
+            _loading = false;
+          });
+        } else {
+          setState(() => _loading = false);
+        }
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (e) {
       setState(() => _loading = false);
     }
-  } else {
-    setState(() => _loading = false);
-    print('❌ Error: status code ${res.statusCode}');
-  }
-} catch (e) {
-  setState(() => _loading = false);
-  print("여기에러: $e");
-}
   }
 
-List<HistoryItem> _applyTitleNumbering(List<HistoryItem> items) {
-  // 1. 제목별 총 등장 횟수 계산
-  final Map<String, int> titleCount = {};
-  for (final item in items) {
-    titleCount[item.title] = (titleCount[item.title] ?? 0) + 1;
+  List<HistoryItem> _applyTitleNumbering(List<HistoryItem> items) {
+    final Map<String, int> titleCount = {};
+    for (final item in items) {
+      titleCount[item.title] = (titleCount[item.title] ?? 0) + 1;
+    }
+    final Map<String, int> currentNum = Map.from(titleCount);
+    final List<HistoryItem> numbered = [];
+    for (final item in items) {
+      final title = item.title;
+      final count = currentNum[title]!;
+      currentNum[title] = count - 1;
+      final newTitle = '$title$count';
+      numbered.add(HistoryItem(
+        id: item.id,
+        userId: item.userId,
+        sessionId: item.sessionId,
+        title: newTitle,
+        subtitle: item.subtitle,
+        category: item.category,
+      ));
+    }
+    return numbered;
   }
 
-  // 2. 현재 붙일 번호를 관리 (총 개수부터 시작)
-  final Map<String, int> currentNum = Map.from(titleCount);
-
-  final List<HistoryItem> numbered = [];
-
-  // 3. 아이템 순회하며 역순 번호 붙이기
-  for (final item in items) {
-    final title = item.title;
-    final count = currentNum[title]!; // 현재 번호
-    currentNum[title] = count - 1;   // 다음 아이템은 1 감소
-
-    final newTitle = '$title$count';
-
-    numbered.add(HistoryItem(
-      id: item.id,
-      userId: item.userId,
-      sessionId: item.sessionId,
-      title: newTitle,
-      subtitle: item.subtitle,
-      category: item.category,
-    ));
-  }
-
-  return numbered;
-}
   List<HistoryItem> get _filteredItems {
     if (_selected == HistoryCategory.all) return _items;
     return _items.where((e) => e.category == _selected).toList();
@@ -217,8 +196,7 @@ List<HistoryItem> _applyTitleNumbering(List<HistoryItem> items) {
               decoration: BoxDecoration(
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
-                border:
-                    selected ? Border.all(color: green, width: 1.5) : null,
+                border: selected ? Border.all(color: green, width: 1.5) : null,
               ),
               child: Text(
                 _label(cat),
@@ -240,88 +218,87 @@ List<HistoryItem> _applyTitleNumbering(List<HistoryItem> items) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        children: HistoryCategory.values
-            .map((cat) => chip(cat))
-            .toList(growable: false),
+        children:
+            HistoryCategory.values.map((cat) => chip(cat)).toList(growable: false),
       ),
     );
   }
 
+  // ✅ TrainingPage와 동일 포맷의 카드
   Widget _buildListCard(HistoryItem item) {
     final String? asset = kCategoryAsset[item.category];
-    return InkWell(
-     onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FeedbackResultPage(
-              initialSessionId: item.sessionId,
-            ),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-                color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
-          ],
+
+    void go() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FeedbackResultPage(initialSessionId: item.sessionId),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 55,
-              height: 55,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: const Color(0xFFE9EDF1),
+      );
+    }
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: go,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 110, // TrainingPage 카드와 동일
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              // 아이콘
+              Container(
+                width: 55,
+                height: 55,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  //color: const Color(0xFFE9EDF1),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: asset == null
+                    ? const SizedBox()
+                    : Image.asset(
+                        asset,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const SizedBox(),
+                      ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: asset == null
-                  ? const SizedBox()
-                  : Image.asset(
-                      asset,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const SizedBox(),
+              const SizedBox(width: 16),
+
+              // 텍스트
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                     ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF111214),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      height: 1.5,
+                    const SizedBox(height: 6),
+                    Text(
+                      item.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF656873),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      height: 1.0,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.black38),
-          ],
+
+              const Icon(Icons.chevron_right, color: Colors.black38),
+            ],
+          ),
         ),
       ),
     );
@@ -329,44 +306,63 @@ List<HistoryItem> _applyTitleNumbering(List<HistoryItem> items) {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
+
     return Scaffold(
       backgroundColor: pageBg,
-      appBar: AppBar(
-        title: const Text('히스토리'),
-        backgroundColor: pageBg,
-        foregroundColor: const Color(0xFF111214),
-        elevation: 0,
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCategoryRow(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-                  child: Text(
-                    _sectionTitle(_selected),
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      height: 1.5,
+      body: SafeArea(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 헤더 (TrainingPage와 동일한 여백/폰트)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(28, 28, 16, 12),
+                    child: Row(
+                      children: [
+                        Text(
+                          '히스토리',
+                          style: t.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
                     ),
                   ),
-                ),
-                Expanded(
-                  child: ListView.separated(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    itemCount: _filteredItems.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) =>
-                        _buildListCard(_filteredItems[index]),
+
+                  // 카테고리 칩
+                  _buildCategoryRow(),
+
+                  // 섹션 타이틀
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Text(
+                      _sectionTitle(_selected),
+                      style: t.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 20),
+
+                  // 리스트
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      itemCount: _filteredItems.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 20),
+                      itemBuilder: (context, index) =>
+                          _buildListCard(_filteredItems[index]),
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

@@ -70,6 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: Text('로그인'),
         backgroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),

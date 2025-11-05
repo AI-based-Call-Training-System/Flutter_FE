@@ -16,6 +16,17 @@ class PrefManager{
     }
 
 
+ // phoneNumber 추가
+  static Future<void> savePhoneNumber(String phone) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('phone_number', phone);
+  }
+  static Future<String?> getPhoneNumber() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('phone_number');
+  }
+
+
     // jwt token
     static Future<void> saveJWTtoken(String token) async {
     final prefs = await SharedPreferences.getInstance();

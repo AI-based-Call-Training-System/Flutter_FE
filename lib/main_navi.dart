@@ -63,7 +63,7 @@ class _MainScreenState extends State<MainScreen> {
                   label: '통화훈련'),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.history), 
-                  activeIcon: Icon(Icons.history_edu), 
+                  activeIcon: Icon(Icons.history), 
                   label: '히스토리'),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline), 
