@@ -1,11 +1,37 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'call_page.dart';
 import 'main_navi.dart';
 import 'feedback_result_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
   static const double side = 20;
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  // 전화 예절 문구 목록
+  static const List<String> etiquetteTips = [
+    '용건을 미리 정리해\n 짧은 통화가 되게 한다.',
+    '늦은 밤, 이른 아침, \n식사시간은 가급적 피한다.',
+    '잘못 걸렸다면 정중히 사과하고 \n통화를 마무리한다.',
+    '통화가 연결되면 인사하고\n자신을 소개한다.',
+    '상이 이쪽을 알아차리면 \n먼저 인사하고 용건을 말한다.',
+    '상대가 없으면 정중히 부탁하고 \n용건을 전한다.',
+    '상대방과 통화 후 \n먼저 끊은 것을 확인한 후에\n끊는다.',
+  ];
+
+  late String todayTip;
+
+  @override
+  void initState() {
+    super.initState();
+    // 홈 화면 진입 시 랜덤 팁 1개 선택
+    todayTip = etiquetteTips[Random().nextInt(etiquetteTips.length)];
+  }
 
   void _goCall(BuildContext context, String scenario) {
     Navigator.push(
@@ -21,17 +47,15 @@ class HomePage extends StatelessWidget {
       backgroundColor: const Color(0xFFF4F4F6),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24), // 하단 네비 여유
+          padding: const EdgeInsets.only(bottom: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // 상단 로고
               Padding(
-                padding: const EdgeInsets.fromLTRB(side, 28, side, 20),
+                padding: const EdgeInsets.fromLTRB(HomePage.side, 28, HomePage.side, 20),
                 child: Row(
                   children: [
-                    // assets에 넣어둔 새 로고
                     Image.asset(
                       'assets/logo_telpy.png',
                       height: 38,
@@ -47,37 +71,20 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // 전화 예절
+              // 전화 예절 (단일 카드 + 랜덤 문구)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text('전화 예절',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    )),
+                child: Text(
+                  '오늘의 전화 예절',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _EtiquetteCard(
-                        title: '예절1',
-                        icon: Icons.phone,
-                        background: const Color(0xFFFFE8D6),
-                        onTap: () => _goCall(context, '예절1'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _EtiquetteCard(
-                        title: '예절2',
-                        icon: Icons.list_alt,
-                        background: const Color(0xFFE7F0FF),
-                        onTap: () => _goCall(context, '예절2'),
-                      ),
-                    ),
-                  ],
+                child: _TodayEtiquetteCard(
+                  tip: todayTip,
+                  onTap: () => _goCall(context, '전화예절'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -85,10 +92,10 @@ class HomePage extends StatelessWidget {
               // 최근 활동
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text('최근 활동',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    )),
+                child: Text(
+                  '최근 활동',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
               const SizedBox(height: 8),
               const Padding(
@@ -123,37 +130,52 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class _EtiquetteCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color background;
+class _TodayEtiquetteCard extends StatelessWidget {
+  final String tip;
   final VoidCallback onTap;
-  const _EtiquetteCard({
-    required this.title,
-    required this.icon,
-    required this.background,
+
+  const _TodayEtiquetteCard({
+    required this.tip,
     required this.onTap,
   });
 
-  @override //예절카드
+  @override
   Widget build(BuildContext context) {
     return Material(
-      // color: Colors.white,
+      color: const Color(0x80D9CD).withOpacity(0.35), 
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 150,
-          padding: const EdgeInsets.all(16),
+          height: 140, // 
+          width: double.infinity,
+          padding: const EdgeInsets.all(20), 
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // 왼쪽: 텍스트 영역
               Expanded(
-                child: Text(title,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700)),
+                child: Text(
+                  tip,
+                  textAlign:TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.normal,
+                    height: 1.5,
+                    color: Colors.black87,
+                  ),
+                ),
               ),
-              Icon(icon, size: 26, color: Colors.black54),
+              const SizedBox(width: 12),
+              
+              // 오른쪽: 이미지 (assets/call_man.png)
+              Image.asset(
+                'assets/call_man.png',
+                width: 80, 
+                height: 80,
+                fit: BoxFit.contain,
+              ),
             ],
           ),
         ),
@@ -161,6 +183,7 @@ class _EtiquetteCard extends StatelessWidget {
     );
   }
 }
+
 
 class _RecentTile extends StatelessWidget {
   final IconData leadingIcon;
@@ -172,7 +195,7 @@ class _RecentTile extends StatelessWidget {
     required this.subtitle,
   });
 
-  @override // 최근활동
+  @override
   Widget build(BuildContext context) {
     return Container(
       height: 72,
@@ -190,15 +213,12 @@ class _RecentTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 14)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 Text(
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ],
             ),
