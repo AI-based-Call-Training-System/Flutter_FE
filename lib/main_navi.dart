@@ -19,7 +19,7 @@ class _MainScreenState extends State<MainScreen> {
   final _pages = const [
     HomePage(),        // 홈
     TrainingPage(),    // 통화훈련
-    HistoryPage(userId: 'tester1',),     // 히스토리
+    HistoryPage(),     // 히스토리
     MyPageScreen(),    // MY
   ];
 
