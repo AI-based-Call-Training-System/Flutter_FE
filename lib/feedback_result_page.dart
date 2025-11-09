@@ -87,7 +87,7 @@ class _FeedbackResultPageState extends State<FeedbackResultPage> {
                             bottom: index == scores.length - 1 ? 0 : kRowGap),
                         child: _ScoreRow(
                           title: item['title'] ?? '점수 항목',
-                          points: item['score'] ?? 0,
+                          points: (item['score'] ?? 0).toInt(),
                           comment: item['comment'] ?? '피드백 코멘트가 없습니다.',
                         ),
                       );
