@@ -234,7 +234,7 @@ class _HistoryPageState extends State<HistoryPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => FeedbackResultPage(initialSessionId: item.sessionId),
+          builder: (_) => FeedbackResultPage(initialSessionId: item.sessionId,needEval: false),
         ),
       );
     }

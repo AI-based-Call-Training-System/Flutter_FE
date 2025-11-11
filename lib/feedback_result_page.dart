@@ -15,7 +15,9 @@ const double kCardVPad = 14.0;
 
 class FeedbackResultPage extends StatefulWidget {
   final String initialSessionId;
-  const FeedbackResultPage({super.key, required this.initialSessionId});
+  final bool needEval;
+
+  const FeedbackResultPage({super.key, required this.initialSessionId,required this.needEval});
 
   @override
   State<FeedbackResultPage> createState() => _FeedbackResultPageState();
@@ -29,16 +31,23 @@ class _FeedbackResultPageState extends State<FeedbackResultPage> {
   void initState() {
     super.initState();
     currentSessionId = widget.initialSessionId;
-    _futureFeedback = fetchFeedbackResult();
+    bool needEval=widget.needEval;
+    _futureFeedback = fetchFeedbackResult(needEval);
   }
 
-  Future<Map<String, dynamic>> fetchFeedbackResult() async {
+  Future<Map<String, dynamic>> fetchFeedbackResult(bool needEval) async {
     try {
       final service = FeedbackApiService();
-      final response = await service.getFeedback(currentSessionId);
+      late final Map<String, dynamic> response;
+      if(needEval){
+        response = await service.getFeedback(currentSessionId);
+        print("getfeedback:${response}");}
+      else{
+        response = await service.getResult(currentSessionId);}
+
       return response;
     } catch (e) {
-      throw Exception('피드백 결과를 불러오지 못했습니다: $e');
+      throw Exception('fetchfeedbackresult 결과를 불러오지 못했습니다: $e');
     }
   }
 

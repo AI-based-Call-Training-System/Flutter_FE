@@ -67,6 +67,21 @@ class _CallPageState extends State<CallPage> {
 
   String? currentScenario;
 
+  String getScenarioImage() {
+  switch (widget.scenario) {
+    case 'order':
+      return 'assets/call_cart.png';
+    case 'greeting':
+      return 'assets/call_greeting.png';
+    case 'school':
+      return 'assets/call_school.png';
+    case 'work':
+      return 'assets/call_work.png';
+    default:
+      return 'assets/call_default.png'; // fallback 이미지
+  }
+}
+
   @override
   void initState() {
     super.initState();
@@ -503,7 +518,7 @@ class _CallPageState extends State<CallPage> {
               child: Column(
                 children: [
             Image.asset(
-              'assets/call_cart.png',
+              getScenarioImage(),
               width: double.infinity,
               height: 220,
               fit: BoxFit.contain,
@@ -568,7 +583,10 @@ class _CallPageState extends State<CallPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => 
-                              FeedbackResultPage(initialSessionId:sessionId!),
+                              FeedbackResultPage(
+                                initialSessionId:sessionId!,
+                                needEval:true,
+                                ),
                             ),
                           );
                         }

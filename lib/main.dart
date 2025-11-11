@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
 
       // history 리스트 -> feedback_result_page.dart로 전환
       routes: {
-        '/feedbackResult': (context) => FeedbackResultPage(initialSessionId: "S-01K7G5NA7A3GJ3T0BB2BFAFX9Z"),
+        '/feedbackResult': (context) => FeedbackResultPage(initialSessionId: "S-01K7G5NA7A3GJ3T0BB2BFAFX9Z",needEval: false),
       },
 
       home: SplashScreen(), // 첫 화면을 스플래시 화면으로 설정

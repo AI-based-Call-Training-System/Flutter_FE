@@ -246,8 +246,8 @@ class HistoryApiService{
 }
 
 class FeedbackApiService{
-
-    Future<Map<String, dynamic>> getFeedback(String sessionId) async {
+    // 첫 피드백 요청: 평가+평가결과 db저장 
+    Future getFeedback(String sessionId) async {
 
     // String? sessionId=await PrefManager.getSessionId();
     final response = await http.get(
@@ -257,7 +257,26 @@ class FeedbackApiService{
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('피드백 결과를 불러오지 못했습니다.');
+      throw Exception('${response.statusCode} 평가 및 평가결과를 불러오지 못했습니다.');
     }
   
-    }}
+    }
+
+    //이후 피드백 요청: 결과만 가져오기
+    Future<Map<String, dynamic>> getResult(String sessionId) async {
+      String u='http://localhost:3000/eval_result/$sessionId';
+
+    // String? sessionId=await PrefManager.getSessionId();
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/eval_result/$sessionId'),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('평가결과를 불러오지 못했습니다.${response.statusCode} ${u}');
+    }
+  
+    }
+    }
+
+  
